@@ -54,7 +54,8 @@ Rails.application.configure do
   # Use a real queuing backend for Active Job (and separate queues per environment).
   # Falls back to :async (in-process threads) when Sidekiq is not running,
   # so exchanges still complete on the free Render tier without a worker process.
-  if ENV["REDIS_URL"].present?
+  # Set SIDEKIQ_ENABLED=true only when a Sidekiq worker process is actually running.
+  if ENV["SIDEKIQ_ENABLED"] == "true"
     config.active_job.queue_adapter = :sidekiq
   else
     config.active_job.queue_adapter = :async
