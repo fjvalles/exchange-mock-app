@@ -9,10 +9,10 @@ import styles from './ExchangePage.module.css'
 
 const CURRENCIES: { value: Currency; label: string; icon: string }[] = [
   { value: 'clp',  label: 'CLP', icon: 'https://api.iconify.design/circle-flags:cl.svg' },
-  { value: 'usd',  label: 'USD', icon: '🇺🇸' },
+  { value: 'usd',  label: 'USD', icon: 'https://api.iconify.design/circle-flags:us.svg' },
   { value: 'btc',  label: 'BTC', icon: 'https://api.iconify.design/logos:bitcoin.svg' },
-  { value: 'usdc', label: 'USDC', icon: '🔵' },
-  { value: 'usdt', label: 'USDT', icon: 'https://api.iconify.design/logos:tether.svg' },
+  { value: 'usdc', label: 'USDC', icon: 'https://api.iconify.design/cryptocurrency-color:usdc.svg' },
+  { value: 'usdt', label: 'USDT', icon: 'https://api.iconify.design/cryptocurrency-color:usdt.svg' },
 ]
 
 function CurrencySelect({
