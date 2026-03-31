@@ -65,8 +65,11 @@
   margin-bottom: 0.5rem;
 }
 
-.currencyIcon {
-  font-size: 1.25rem;
+.currencyIconImage {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .balanceAmount {

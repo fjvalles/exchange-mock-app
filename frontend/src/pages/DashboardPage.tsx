@@ -12,7 +12,11 @@ const CURRENCY_LABELS: Record<string, string> = {
 }
 
 const CURRENCY_ICONS: Record<string, string> = {
-  usd: '🇺🇸', clp: '🇨🇱', btc: '₿', usdc: '🔵', usdt: '🟢',
+  clp: 'https://api.iconify.design/circle-flags:cl.svg',
+  usd: 'https://api.iconify.design/circle-flags:us.svg',
+  btc: 'https://api.iconify.design/logos:bitcoin.svg',
+  usdc: 'https://api.iconify.design/cryptocurrency-color:usdc.svg',
+  usdt: 'https://api.iconify.design/cryptocurrency-color:usdt.svg',
 }
 
 const STATUS_TABS = [
@@ -76,7 +80,11 @@ export function DashboardPage() {
               <div key={balance.currency} className={styles.balanceCard}>
                 <div className={styles.balanceCardHeader}>
                   <span>{CURRENCY_LABELS[balance.currency] ?? balance.currency.toUpperCase()}</span>
-                  <span className={styles.currencyIcon}>{CURRENCY_ICONS[balance.currency]}</span>
+                  {CURRENCY_ICONS[balance.currency] ? (
+                    <img src={CURRENCY_ICONS[balance.currency]} className={styles.currencyIconImage} alt="" />
+                  ) : (
+                    <span className={styles.currencyIcon}>{balance.currency.toUpperCase()}</span>
+                  )}
                 </div>
                 <p className={styles.balanceAmount}>
                   {balance.type === 'fiat' ? '$ ' : ''}
