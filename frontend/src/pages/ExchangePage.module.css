@@ -176,13 +176,14 @@
 }
 
 .summaryBox {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: #fdfdfd;
+  border: 1px solid #f1f1f1;
+  border-radius: 12px;
+  padding: 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 500px;
+  gap: 1.5rem;
+  max-width: 550px;
 }
 
 .summaryRow {
@@ -208,15 +209,16 @@
 
 .summaryTotalValue {
   font-weight: 700;
-  color: #007b82;
+  color: #05BCB9;
+  font-size: 1.1rem;
 }
 
 .summaryActions {
   display: flex;
-  gap: 1rem;
-  margin-top: 3rem;
-  max-width: 500px;
-  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+  max-width: 550px;
+  justify-content: flex-start;
 }
 
 .summaryActions button {
