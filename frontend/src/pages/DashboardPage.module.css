@@ -18,11 +18,14 @@
 }
 
 .headerIcon {
-  font-size: 2rem;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .username {
-  color: #007b82;
+  color: #05BCB9;
+  text-transform: capitalize;
 }
 
 .sectionTitle {
@@ -99,8 +102,8 @@
 }
 
 .activeTab {
-  color: #007b82;
-  border-bottom-color: #007b82;
+  color: #05BCB9;
+  border-bottom-color: #05BCB9;
   font-weight: 600;
 }
 
@@ -165,7 +168,7 @@
 .pending   { background: #fef9c3; color: #713f12; }
 .rejected  { background: #fee2e2; color: #991b1b; }
 
-.positive { color: #007b82; }
+.positive { color: #05BCB9; }
 .neutral  { color: #374151; }
 
 .emptyState {

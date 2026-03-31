@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useBalances } from '../hooks/useBalances'
 import { useExchanges } from '../hooks/useExchanges'
 import { ExchangeSuccessModal } from '../components/ExchangeSuccessModal'
+import coinIcon from '../assets/coin.png'
 import styles from './DashboardPage.module.css'
 
 const CURRENCY_LABELS: Record<string, string> = {
@@ -59,7 +60,7 @@ export function DashboardPage() {
       )}
 
       <div className={styles.header}>
-        <span className={styles.headerIcon}>💰</span>
+        <img src={coinIcon} alt="" className={styles.headerIcon} />
         <h2>
           ¡Hola <span className={styles.username}>{user?.email.split('@')[0]}!</span>
         </h2>
@@ -118,7 +119,7 @@ export function DashboardPage() {
                 <li key={exchange.id} className={styles.historyItem}>
                   <div className={styles.historyMeta}>
                     <span className={styles.historyLabel}>
-                      #{exchange.id} · {exchange.from_currency.toUpperCase()} → {exchange.to_currency.toUpperCase()}
+                      #{exchange.id} · Intercambiaste
                     </span>
                     <span className={`${styles.badge} ${styles[exchange.status as 'completed' | 'pending' | 'rejected']}`}>
                       {exchange.status}

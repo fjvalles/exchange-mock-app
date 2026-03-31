@@ -104,6 +104,7 @@ export function ExchangePage() {
   const amountNum = parseFloat(calculatedFrom || '0')
   const exceedsBalance = amountNum > availableNum
   const isValidAmount = amountNum > 0 && !exceedsBalance
+  const remainingBalance = availableNum - (amountNum > 0 ? amountNum : 0)
 
   const [step, setStep] = useState<'form' | 'summary'>('form')
 
@@ -168,9 +169,12 @@ export function ExchangePage() {
           <h2 className={styles.title}>¿Qué deseas intercambiar?</h2>
 
           {fromBalance && (
-            <p className={styles.balanceHint}>
-              Saldo disponible: {fromBalance.type === 'fiat' ? '$ ' : ''}
-              {parseFloat(fromBalance.amount).toLocaleString('es-CL')} {fromCurrency.toUpperCase()}
+            <p className={styles.balanceHint} style={{ color: exceedsBalance ? '#dc2626' : undefined }}>
+              Saldo disponible:{fromBalance.type === 'fiat' ? ' $' : ''} 
+              {remainingBalance.toLocaleString('es-CL', {
+                minimumFractionDigits: ['usd','clp'].includes(fromCurrency) ? 2 : 8,
+                maximumFractionDigits: ['usd','clp'].includes(fromCurrency) ? 2 : 8,
+              })} {fromCurrency.toUpperCase()}
             </p>
           )}
 

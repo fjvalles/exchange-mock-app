@@ -1,3 +1,4 @@
+import successImage from '../assets/successful_exchange.png'
 import styles from './ExchangeSuccessModal.module.css'
 
 interface Props {
@@ -14,7 +15,7 @@ export function ExchangeSuccessModal({ toCurrency, onClose }: Props) {
         </button>
 
         <div className={styles.illustration}>
-          <img src="/amico.png" alt="Intercambio exitoso" />
+          <img src={successImage} alt="Intercambio exitoso" />
         </div>
 
         <h2 className={styles.title}>¡Intercambio exitoso!</h2>

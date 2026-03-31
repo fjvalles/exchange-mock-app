@@ -4,5 +4,3 @@ tmp/
 spec/
 .rspec
 *.md
-# Exclude macOS-generated Gemfile.lock — bundle resolves fresh for linux/amd64
-Gemfile.lock

@@ -19,9 +19,7 @@ export function Sidebar() {
 
   return (
     <nav className={styles.sidebar}>
-      <div className={styles.logo}>
-        <span className={styles.logoIcon}>$</span>
-      </div>
+
       <ul className={styles.nav}>
         {NAV_ITEMS.map(({ to, label }) => (
           <li key={to}>

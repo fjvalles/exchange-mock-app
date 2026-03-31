@@ -14,8 +14,8 @@ RUN gem install bundler -v 2.4.12 --no-document
 
 WORKDIR /app
 
-# Copy only Gemfile — let bundle resolve fresh for linux/amd64
-COPY Gemfile ./
+# Copy Gemfile and lockfile (now with x86_64-linux platform added)
+COPY Gemfile Gemfile.lock ./
 RUN bundle install --jobs 4 --retry 3
 
 COPY . .
