@@ -277,6 +277,7 @@ export function ExchangePage() {
             </button>
             <button
               className={styles.submitBtn}
+              data-active={true}
               disabled={createExchange.isPending}
               onClick={handleExchange}
             >
