@@ -1,0 +1,495 @@
+openapi: "3.0.3"
+info:
+  title: VitaWallet Exchange API
+  description: |
+    REST API for the VitaWallet mock exchange app.
+    
+    ## Authentication
+    All endpoints (except `POST /auth/login`) require a Bearer token
+    obtained from the login endpoint.
+    
+    ```
+    Authorization: Bearer <token>
+    ```
+    
+    ## Demo credentials
+    ```
+    email:    demo@vitawallet.io
+    password: password123
+    ```
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication
+  - name: Balances
+    description: User wallet balances
+  - name: Prices
+    description: Real-time crypto price quotes
+  - name: Exchanges
+    description: Currency exchange operations
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticates a user and returns a bearer token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: demo@vitawallet.io
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "a1b2c3d4e5f6..."
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out
+
+  /balances:
+    get:
+      tags: [Balances]
+      summary: List all balances
+      description: Returns the authenticated user's wallet balances for all currencies (USD, CLP, BTC, USDC, USDT).
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of balances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balances:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Balance"
+              example:
+                balances:
+                  - currency: clp
+                    amount: "4500000.00000000"
+                    type: fiat
+                  - currency: btc
+                    amount: "0.05000000"
+                    type: crypto
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /prices:
+    get:
+      tags: [Prices]
+      summary: Get current crypto prices (CLP-based)
+      description: |
+        Returns real-time BTC, USDC and USDT prices in CLP, fetched from VitaWallet's
+        external API. Results are cached in Redis for 60 seconds.
+        A circuit breaker (Stoplight) returns the last cached value when the external
+        API is unavailable.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Price quotes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prices:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PriceQuote"
+                  cached:
+                    type: boolean
+                    description: Whether the response came from cache
+                  fetched_at:
+                    type: string
+                    format: date-time
+              example:
+                prices:
+                  - base: btc
+                    quote: clp
+                    buy_rate: "70748123.45000000"
+                    sell_rate: "50927048.23000000"
+                  - base: usdc
+                    quote: clp
+                    buy_rate: "1058.44000000"
+                    sell_rate: "762.08000000"
+                cached: false
+                fetched_at: "2026-03-31T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          description: Price service unavailable (external API down and no cache)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /exchanges:
+    get:
+      tags: [Exchanges]
+      summary: List exchange history
+      description: Returns paginated exchange history for the authenticated user.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            type: string
+            enum: [pending, completed, rejected]
+          example: completed
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Paginated exchange list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchanges:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Exchange"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Exchanges]
+      summary: Create a new exchange
+      description: |
+        Creates a currency exchange request. The exchange is initially created with
+        `pending` status and processed asynchronously by a Sidekiq background job.
+        
+        The job will:
+        - Verify the balance again with a DB row lock (prevents race conditions)
+        - Apply the `locked_rate` saved at creation time
+        - Transition to `completed` (funds moved) or `rejected` (insufficient balance)
+        
+        **Supported pairs:**
+        
+        | From | To |
+        |------|----|
+        | CLP  | BTC, USDC, USDT, USD |
+        | USD  | BTC, USDC, USDT, CLP |
+        | BTC  | CLP, USD |
+        | USDC | CLP, USD |
+        | USDT | CLP, USD |
+        
+        Cross-currency rates (e.g. BTC→USD, CLP→USD) are computed via CLP.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Optional UUID for idempotent submission (prevents duplicate exchanges on retry)
+          required: false
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exchange]
+              properties:
+                exchange:
+                  type: object
+                  required: [from_currency, to_currency, from_amount]
+                  properties:
+                    from_currency:
+                      type: string
+                      enum: [clp, usd, btc, usdc, usdt]
+                      example: clp
+                    to_currency:
+                      type: string
+                      enum: [clp, usd, btc, usdc, usdt]
+                      example: btc
+                    from_amount:
+                      type: string
+                      description: Amount as a decimal string
+                      example: "1000000.00"
+      responses:
+        "202":
+          description: Exchange accepted (pending async execution)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchange:
+                    $ref: "#/components/schemas/Exchange"
+              example:
+                exchange:
+                  id: 42
+                  from_currency: clp
+                  to_currency: btc
+                  from_amount: "1000000.00000000"
+                  to_amount: null
+                  locked_rate: "70748123.45000000"
+                  status: pending
+                  executed_at: null
+                  created_at: "2026-03-31T10:00:00Z"
+        "200":
+          description: Duplicate — returns the original exchange (idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchange:
+                    $ref: "#/components/schemas/Exchange"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                insufficient_balance:
+                  summary: Insufficient balance
+                  value:
+                    error: Insufficient balance
+                    code: INSUFFICIENT_BALANCE
+                invalid_pair:
+                  summary: Invalid currency pair
+                  value:
+                    error: Invalid currency pair
+                    code: INVALID_CURRENCY_PAIR
+        "503":
+          description: Price service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /exchanges/{id}:
+    get:
+      tags: [Exchanges]
+      summary: Get a single exchange
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Exchange detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchange:
+                    $ref: "#/components/schemas/Exchange"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Exchange not found or belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Opaque token obtained from POST /auth/login
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: Invalid or missing token
+            code: UNAUTHORIZED
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: demo@vitawallet.io
+
+    Balance:
+      type: object
+      properties:
+        currency:
+          type: string
+          enum: [usd, clp, btc, usdc, usdt]
+          example: clp
+        amount:
+          type: string
+          description: Decimal string with 8 digits of precision
+          example: "4500000.00000000"
+        type:
+          type: string
+          enum: [fiat, crypto]
+          example: fiat
+
+    PriceQuote:
+      type: object
+      properties:
+        base:
+          type: string
+          example: btc
+        quote:
+          type: string
+          example: clp
+        buy_rate:
+          type: string
+          description: CLP per 1 unit of base currency (platform buying base)
+          example: "70748123.45000000"
+        sell_rate:
+          type: string
+          description: CLP per 1 unit of base currency (platform selling base)
+          example: "50927048.23000000"
+
+    Exchange:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        from_currency:
+          type: string
+          example: clp
+        to_currency:
+          type: string
+          example: btc
+        from_amount:
+          type: string
+          description: Amount sent by user
+          example: "1000000.00000000"
+        to_amount:
+          type: string
+          nullable: true
+          description: Amount received (null while pending)
+          example: "0.01413450"
+        locked_rate:
+          type: string
+          description: Rate locked at creation time
+          example: "70748123.45000000"
+        status:
+          type: string
+          enum: [pending, completed, rejected]
+          example: completed
+        failure_reason:
+          type: string
+          nullable: true
+          example: null
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-03-31T10:00:05Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-31T10:00:00Z"
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 3
+        count:
+          type: integer
+          example: 42
+        items:
+          type: integer
+          description: Items per page
+          example: 20
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid or missing token
+        code:
+          type: string
+          example: UNAUTHORIZED
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
