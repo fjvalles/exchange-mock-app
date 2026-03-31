@@ -174,8 +174,9 @@ GEM
     nokogiri (1.17.2-x86_64-linux)
       racc (~> 1.4)
     pagy (6.5.0)
-    pg (1.6.3)
     pg (1.6.3-x86_64-darwin)
+    pg (1.6.3-x86_64-linux)
+    pg (1.6.3-x86_64-linux-musl)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -286,6 +287,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-20
+  x86_64-linux
   x86_64-linux-musl
 
 DEPENDENCIES
@@ -318,7 +320,7 @@ DEPENDENCIES
   webmock (~> 3.19)
 
 RUBY VERSION
-   ruby 3.0.1p64
+   ruby 3.2.0p0
 
 BUNDLED WITH
    2.4.12
