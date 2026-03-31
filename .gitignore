@@ -1,0 +1,30 @@
+# Rails
+backend/config/master.key
+backend/config/credentials/*.key
+backend/log/*.log
+backend/.env
+backend/tmp/
+backend/storage/
+backend/public/packs/
+backend/public/assets/
+backend/.bundle/
+backend/vendor/bundle/
+backend/*.gem
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+*.swp
+*.swo
+.vscode/settings.json
+
+# Ruby LSP
+.ruby-lsp/
