@@ -138,8 +138,13 @@
 
 /* In the actual app where it's enabled, we'd use teal. But figma shows it gray/disabled */
 .submitBtn[data-active="true"] {
-  background: #05BCB9;
+  background: linear-gradient(90.16deg, #05BCB9 1.1%, #00A3A1 100.35%);
   color: white;
+  box-shadow: 0px 4px 12px rgba(5, 188, 185, 0.2);
+}
+
+.submitBtn[data-active="true"]:hover {
+  filter: brightness(1.05);
 }
 
 /* Summary View Styles */
