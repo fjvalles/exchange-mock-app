@@ -89,7 +89,7 @@ export function DashboardPage() {
                 <p className={styles.balanceAmount}>
                   {balance.type === 'fiat' ? '$ ' : ''}
                   {parseFloat(balance.amount).toLocaleString('es-CL', {
-                    minimumFractionDigits: 2,
+                    minimumFractionDigits: balance.currency === 'btc' ? 3 : 2,
                     maximumFractionDigits: balance.type === 'crypto' ? 4 : 2,
                   })}
                 </p>
