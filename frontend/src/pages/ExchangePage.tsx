@@ -8,11 +8,11 @@ import type { Currency } from '../types/api'
 import styles from './ExchangePage.module.css'
 
 const CURRENCIES: { value: Currency; label: string; icon: string }[] = [
-  { value: 'clp',  label: 'CLP', icon: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Chile.svg' },
+  { value: 'clp',  label: 'CLP', icon: '🇨🇱' },
   { value: 'usd',  label: 'USD', icon: '🇺🇸' },
-  { value: 'btc',  label: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
+  { value: 'btc',  label: 'BTC', icon: '₿' },
   { value: 'usdc', label: 'USDC', icon: '🔵' },
-  { value: 'usdt', label: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032' },
+  { value: 'usdt', label: 'USDT', icon: '🟢' },
 ]
 
 function CurrencySelect({
@@ -21,11 +21,7 @@ function CurrencySelect({
   const current = CURRENCIES.find(c => c.value === value);
   return (
     <div className={styles.currencySelectWrapper}>
-      {current && current.icon.startsWith('http') ? (
-        <img src={current.icon} className={styles.currencyIcon} alt={current.label} />
-      ) : (
-        <span className={styles.currencyEmoji}>{current?.icon}</span>
-      )}
+      <span className={styles.currencyEmoji}>{current?.icon}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Currency)}

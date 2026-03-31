@@ -57,8 +57,10 @@
 }
 
 .currencyEmoji {
-  font-size: 1.5rem;
-  margin-right: 0.5rem;
+  font-size: 1.8rem;
+  margin-right: -0.2rem;
+  display: flex;
+  align-items: center;
 }
 
 .select {
