@@ -1,5 +1,5 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
-# Deploys: Rails API + Sidekiq worker + Vite frontend + Postgres + Redis
+# Deploy with: render.com → New → Blueprint → connect this repo
 
 services:
   # ── Rails API ──────────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ services:
       - key: RAILS_SERVE_STATIC_FILES
         value: "true"
       - key: RAILS_MASTER_KEY
-        sync: false           # Set this manually in Render dashboard
+        sync: false                 # ← Set manually in Render dashboard
       - key: DATABASE_URL
         fromDatabase:
           name: exchange-db
@@ -30,7 +30,7 @@ services:
           type: redis
           property: connectionString
       - key: ALLOWED_ORIGINS
-        sync: false           # Set to your frontend Render URL, e.g. https://exchange-app.onrender.com
+        sync: false                 # ← Set to your frontend URL after deploy
 
   # ── Sidekiq background worker ──────────────────────────────────────────────
   - type: worker
@@ -38,7 +38,7 @@ services:
     runtime: ruby
     rootDir: backend
     buildCommand: bundle install
-    startCommand: bundle exec sidekiq -C config/sidekiq.yml
+    startCommand: bundle exec sidekiq
     envVars:
       - key: RAILS_ENV
         value: production
@@ -67,13 +67,13 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false           # Set to your API Render URL, e.g. https://exchange-api.onrender.com
+        sync: false                 # ← Set to https://exchange-api.onrender.com
 
   # ── Redis ──────────────────────────────────────────────────────────────────
   - type: redis
     name: exchange-redis
-    ipAllowList: []           # Only allow internal connections
     plan: free
+    ipAllowList: []               # Only allow internal connections
 
 databases:
   # ── PostgreSQL ─────────────────────────────────────────────────────────────
