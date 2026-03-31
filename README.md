@@ -17,47 +17,27 @@ exchange-mock-app/
 ## 🏗️ Arquitectura del Sistema
 
 ```mermaid
-graph TD
-    subgraph Frontend
-        React["React (Vite + TS)"]
-        RTK["React Query (Sincronización de Estado)"]
+graph LR
+    User((Usuario)) --> FE[Frontend React]
+    FE --> API[API Rails]
+    
+    subgraph "Lógica y Datos"
+        API --> DB[(PostgreSQL)]
+        API --> Redis{Redis}
+        Redis --> Sidekiq[Sidekiq Worker]
+        Sidekiq --> DB
     end
 
-    subgraph "API Gateway / Backend"
-        Rails["Rails 7 API (Dockerized)"]
-        RA["Rack::Attack (Limitador)"]
-        Auth["Auth (Bearer Token)"]
+    subgraph "Integración Precios"
+        API -.-> CB[Circuit Breaker]
+        CB -.-> VW_API([API VitaWallet])
     end
-
-    subgraph "Capa de Datos y Procesamiento"
-        PG[(PostgreSQL 16)]
-        Redis[(Redis 7)]
-        Sidekiq["Sidekiq (Intercambios Asíncronos)"]
-    end
-
-    subgraph "Integraciones Externas"
-        VW_API["API VitaWallet (Precios)"]
-        CB["Circuit Breaker (Stoplight)"]
-    end
-
-    React -->|Interacción| RTK
-    RTK -->|HTTP POST| RA
-    RA --> Rails
-    Rails -->|Validar Auth| Auth
-    Rails -->|Consultar Precio| CB
-    CB -->|Cache| Redis
-    CB -->|Fetch| VW_API
-    Rails -->|Crear Solicitud| PG
-    Rails -->|Encolar Job| Redis
-    Redis -->|Procesar| Sidekiq
-    Sidekiq -->|Escribir Transacción| PG
 ```
 
-### 🔁 Flujo de Solicitud de Intercambio
-
-1. **Client Request**: El usuario pulsa "Intercambiar". Se genera un `Idempotency-Key` único.
-2. **Acceptance (202)**: La API valida el saldo, bloquea la tasa de cambio actual (`locked_rate`) y encola un Job.
-3. **Async Execution**: Sidekiq procesa el intercambio en una transacción atómica con **bloqueo optimista**.
+### 🔁 Flujo del Intercambio
+1. **Cliente**: El usuario solicita un intercambio (POST).
+2. **API**: Valida el saldo y encola la ejecución en **Sidekiq**.
+3. **Worker**: Sidekiq procesa el cambio de divisas de forma atómica en la **Base de Datos**.
 
 ---
 
