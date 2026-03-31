@@ -8,11 +8,11 @@ import type { Currency } from '../types/api'
 import styles from './ExchangePage.module.css'
 
 const CURRENCIES: { value: Currency; label: string; icon: string }[] = [
-  { value: 'clp',  label: 'CLP', icon: 'https://hatscripts.github.io/circle-flags/flags/cl.svg' },
+  { value: 'clp',  label: 'CLP', icon: 'https://api.iconify.design/circle-flags:cl.svg' },
   { value: 'usd',  label: 'USD', icon: '🇺🇸' },
-  { value: 'btc',  label: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
+  { value: 'btc',  label: 'BTC', icon: 'https://api.iconify.design/logos:bitcoin.svg' },
   { value: 'usdc', label: 'USDC', icon: '🔵' },
-  { value: 'usdt', label: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032' },
+  { value: 'usdt', label: 'USDT', icon: 'https://api.iconify.design/logos:tether.svg' },
 ]
 
 function CurrencySelect({
