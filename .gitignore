@@ -7,7 +7,7 @@
 .env.*
 backend/config/master.key
 backend/config/credentials/*.key
-backend/log/*.log
+backend/log/
 backend/.env
 backend/tmp/
 backend/storage/
