@@ -5,17 +5,18 @@
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #000;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 .balanceHint {
-  color: #007b82;
-  font-size: 0.9rem;
+  color: #05BCB9;
+  font-size: 1.1rem;
   font-weight: 500;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .formGroup {
@@ -24,36 +25,57 @@
 
 .label {
   display: block;
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-size: 1rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+  font-weight: 400;
 }
 
 .inputRow {
   display: flex;
   gap: 0;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  height: 64px;
+}
+
+.currencySelectWrapper {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.currencyIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.5rem;
+}
+
+.currencyEmoji {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
 }
 
 .select {
-  padding: 0.875rem 1rem;
   border: none;
-  background: #f9fafb;
-  font-size: 0.95rem;
+  background: #fff;
+  font-size: 1.1rem;
   cursor: pointer;
   outline: none;
-  min-width: 160px;
-  border-right: 1px solid #d1d5db;
+  min-width: 60px;
+  padding-right: 0.5rem;
 }
 
 .amountInput {
   flex: 1;
-  padding: 0.875rem 1rem;
+  padding: 0 1.5rem;
   border: none;
-  font-size: 1rem;
+  font-size: 1.1rem;
   outline: none;
   background: #fff;
 }
@@ -76,15 +98,17 @@
 }
 
 .backBtn {
-  padding: 0.875rem 2rem;
+  flex: 1;
+  padding: 1rem 0;
   background: white;
-  border: 1.5px solid #007b82;
-  border-radius: 8px;
-  font-size: 1rem;
+  border: 2px solid #05BCB9;
+  border-radius: 12px;
+  font-size: 1.1rem;
   cursor: pointer;
-  color: #007b82;
-  font-weight: 600;
-  transition: background 0.15s;
+  color: #05BCB9;
+  font-weight: 500;
+  transition: all 0.2s;
+  max-width: 200px;
 }
 
 .backBtn:hover {
@@ -92,24 +116,28 @@
 }
 
 .submitBtn {
-  padding: 0.875rem 2rem;
-  background: #007b82;
-  color: white;
+  flex: 2;
+  padding: 1rem 0;
+  background: #e2e8f0;
+  color: #94a3b8;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s;
+  max-width: 300px;
 }
 
-.submitBtn:hover:not(:disabled) {
-  background: #006068;
+.submitBtn:not(:disabled) {
+  background: #e2e8f0;
+  color: #94a3b8;
 }
 
-.submitBtn:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
+/* In the actual app where it's enabled, we'd use teal. But figma shows it gray/disabled */
+.submitBtn[data-active="true"] {
+  background: #05BCB9;
+  color: white;
 }
 
 /* Summary View Styles */

@@ -4,8 +4,11 @@ import styles from './Sidebar.module.css'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Inicio' },
+  { to: '/transfer',  label: 'Transferir' },
+  { to: '/topup',     label: 'Recargar' },
   { to: '/exchange',  label: 'Intercambiar' },
-  { to: '/history',   label: 'Historial' },
+  { to: '/profile',   label: 'Perfil' },
+  { to: '/help',      label: 'Ayuda' },
 ]
 
 export function Sidebar() {

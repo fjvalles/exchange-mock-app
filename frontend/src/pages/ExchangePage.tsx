@@ -8,28 +8,36 @@ import type { Currency } from '../types/api'
 import styles from './ExchangePage.module.css'
 
 const CURRENCIES: { value: Currency; label: string; icon: string }[] = [
-  { value: 'clp',  label: 'Peso chileno', icon: '🇨🇱' },
-  { value: 'usd',  label: 'US Dollar',    icon: '🇺🇸' },
-  { value: 'btc',  label: 'Bitcoin',      icon: '₿' },
-  { value: 'usdc', label: 'USD Coin',     icon: '🔵' },
-  { value: 'usdt', label: 'Tether',       icon: '🟢' },
+  { value: 'clp',  label: 'CLP', icon: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Chile.svg' },
+  { value: 'usd',  label: 'USD', icon: '🇺🇸' },
+  { value: 'btc',  label: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
+  { value: 'usdc', label: 'USDC', icon: '🔵' },
+  { value: 'usdt', label: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032' },
 ]
 
 function CurrencySelect({
   value, onChange, exclude,
 }: { value: Currency; onChange: (v: Currency) => void; exclude?: Currency }) {
+  const current = CURRENCIES.find(c => c.value === value);
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as Currency)}
-      className={styles.select}
-    >
-      {CURRENCIES.filter((c) => c.value !== exclude).map((c) => (
-        <option key={c.value} value={c.value}>
-          {c.icon} {c.label}
-        </option>
-      ))}
-    </select>
+    <div className={styles.currencySelectWrapper}>
+      {current && current.icon.startsWith('http') ? (
+        <img src={current.icon} className={styles.currencyIcon} alt={current.label} />
+      ) : (
+        <span className={styles.currencyEmoji}>{current?.icon}</span>
+      )}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as Currency)}
+        className={styles.select}
+      >
+        {CURRENCIES.filter((c) => c.value !== exclude).map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -229,6 +237,7 @@ export function ExchangePage() {
             </button>
             <button
               className={styles.submitBtn}
+              data-active={canSubmit}
               disabled={!canSubmit}
               onClick={handleContinue}
             >
