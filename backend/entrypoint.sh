@@ -5,10 +5,10 @@ echo "==> Removing stale server PID..."
 rm -f /app/tmp/pids/server.pid
 
 echo "==> Running migrations..."
-bundle exec rails db:create db:migrate 2>&1
+bundle exec rails db:migrate 2>&1
 
-echo "==> Seeding database (skip if already seeded)..."
-bundle exec rails db:seed 2>&1 || true
+echo "==> Seeding database..."
+bundle exec rails db:seed 2>&1 || echo "==> Seed failed or already seeded, continuing..."
 
 # Start Sidekiq in background only if SIDEKIQ_ENABLED=true
 if [ "$SIDEKIQ_ENABLED" = "true" ]; then
@@ -16,5 +16,5 @@ if [ "$SIDEKIQ_ENABLED" = "true" ]; then
   bundle exec sidekiq &
 fi
 
-echo "==> Starting Rails server..."
+echo "==> Starting Rails server on port ${PORT:-3000}..."
 exec bundle exec rails server -b 0.0.0.0 -p "${PORT:-3000}"
