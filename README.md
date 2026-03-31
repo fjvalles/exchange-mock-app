@@ -6,6 +6,10 @@ Una mini-aplicación de intercambio de criptomonedas full-stack construida con *
 
 ### 🚀 **Demo en Vivo:** [frontend-7lto.onrender.com](https://frontend-7lto.onrender.com/)
 
+**Credenciales de acceso:**
+- **Email:** `demo@vitawallet.io`
+- **Password:** `password123`
+
 ---
 
 ## Resumen de la Arquitectura
