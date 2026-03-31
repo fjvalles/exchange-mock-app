@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Health check for Render / load balancers
+  get "/up", to: proc { [200, {}, ["OK"]] }
+
   # Swagger UI — served as static HTML
   get "/api-docs", to: redirect("/api-docs.html")
 
