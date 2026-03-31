@@ -224,15 +224,9 @@ paths:
         
         **Supported pairs:**
         
-        | From | To |
-        |------|----|
-        | CLP  | BTC, USDC, USDT, USD |
-        | USD  | BTC, USDC, USDT, CLP |
-        | BTC  | CLP, USD |
-        | USDC | CLP, USD |
-        | USDT | CLP, USD |
+        Any different pair of the following currencies: **CLP, USD, BTC, USDC, USDT**.
         
-        Cross-currency rates (e.g. BTC→USD, CLP→USD) are computed via CLP.
+        Cross-currency rates (e.g. BTC→USDT, USDC→BTC) are automatically computed via CLP as bridge.
       security:
         - BearerAuth: []
       parameters:

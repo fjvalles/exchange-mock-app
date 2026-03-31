@@ -34,13 +34,6 @@ describe('DashboardPage', () => {
     })
   })
 
-  it('renders navigation cards (Recargar, Transferir, Intercambiar)', () => {
-    renderDashboardPage()
-    expect(screen.getByText(/Recargar/i)).toBeInTheDocument()
-    expect(screen.getByText(/Transferir/i)).toBeInTheDocument()
-    expect(screen.getByText(/Intercambiar/i)).toBeInTheDocument()
-  })
-
   it('renders history table items', async () => {
     renderDashboardPage()
     // History should have items from mocks

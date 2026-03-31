@@ -168,12 +168,12 @@ cd backend
 bundle exec rspec --format documentation
 ```
 
-**93 examples, 0 failures**
+**92 examples, 0 failures**
 
 Test coverage includes:
 - Model specs with DB constraint tests
 - Request specs for all API endpoints
-- Service specs (CreateExchangeService, ExchangeExecutionService, PriceQuoteService)
+- Service specs (CreateExchangeService, ExchangeExecutionService, PriceQuoteService) supporting arbitrary pairs cross-rate logic
 - External API mocked with WebMock
 - Redis mocked with MockRedis
 - Circuit breaker tested with in-memory Stoplight store
@@ -186,11 +186,13 @@ npm test
 npm run type-check
 ```
 
-**12 tests, 0 failures**
+**19 tests, 0 failures**
 
 Test coverage includes:
 - Custom hooks (useBalances, useCreateExchange) with MSW API mocking
 - LoginPage component tests (form behavior, error states)
+- DashboardPage component tests (balance rendering, history table)
+- ExchangePage component tests (full exchange flow, balance validation)
 - HistoryPage component tests (filtering, table rendering)
 
 ---
