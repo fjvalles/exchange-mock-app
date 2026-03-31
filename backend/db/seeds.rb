@@ -7,11 +7,11 @@ end
 puts "Demo user token: #{user.api_token}"
 
 balances = {
-  "usd"  => BigDecimal("5000"),
-  "clp"  => BigDecimal("4_500_000"),
+  "usd"  => BigDecimal("50"),
+  "clp"  => BigDecimal("900000"),
   "btc"  => BigDecimal("0.05"),
-  "usdc" => BigDecimal("1000"),
-  "usdt" => BigDecimal("500")
+  "usdc" => BigDecimal("100"),
+  "usdt" => BigDecimal("0")
 }
 
 balances.each do |currency, amount|
