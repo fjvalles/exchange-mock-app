@@ -10,6 +10,9 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Pin Bundler to same version as Gemfile.lock to avoid resolution errors
+RUN gem install bundler -v 2.4.12 --no-document
+
 COPY Gemfile Gemfile.lock ./
 RUN bundle install --jobs 4 --retry 3
 
