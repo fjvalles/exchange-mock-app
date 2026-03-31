@@ -14,142 +14,113 @@ exchange-mock-app/
 └── docker-compose.yml
 ```
 
-### Flujo de Solicitud (Intercambio)
+## 🏗️ Arquitectura del Sistema
 
-```
-POST /api/v1/exchanges
-  → Rack::Attack (límite de peticiones)
-  → authenticate_user!
-  → CreateExchangeService
-      → validar par de divisas (cualquier combinación)
-      → validar saldo del usuario
-      → PriceQuoteService  ←→  API externa de VitaWallet
-           ↕ circuit breaker (Stoplight)
-           ↕ Caché en Redis (60s TTL)
-      → Exchange.create!(status: pending, locked_rate)
-      → ExchangeExecutionJob.perform_later(id)
-  → 202 Accepted
+```mermaid
+graph TD
+    subgraph Frontend
+        React["React (Vite + TS)"]
+        RTK["React Query (Sincronización de Estado)"]
+    end
 
-[Sidekiq]
-  ExchangeExecutionJob
-  → ExchangeExecutionService
-      → BEGIN TRANSACTION
-      → balances.lock! (bloqueo optimista)
-      → validar saldo (defensa en profundidad)
-      → débito moneda_origen
-      → crédito moneda_destino (aritmética BigDecimal)
-      → exchange.update!(status: completed)
-      → COMMIT
+    subgraph "API Gateway / Backend"
+        Rails["Rails 7 API (Dockerized)"]
+        RA["Rack::Attack (Limitador)"]
+        Auth["Auth (Bearer Token)"]
+    end
+
+    subgraph "Capa de Datos y Procesamiento"
+        PG[(PostgreSQL 16)]
+        Redis[(Redis 7)]
+        Sidekiq["Sidekiq (Intercambios Asíncronos)"]
+    end
+
+    subgraph "Integraciones Externas"
+        VW_API["API VitaWallet (Precios)"]
+        CB["Circuit Breaker (Stoplight)"]
+    end
+
+    React -->|Interacción| RTK
+    RTK -->|HTTP POST| RA
+    RA --> Rails
+    Rails -->|Validar Auth| Auth
+    Rails -->|Consultar Precio| CB
+    CB -->|Cache| Redis
+    CB -->|Fetch| VW_API
+    Rails -->|Crear Solicitud| PG
+    Rails -->|Encolar Job| Redis
+    Redis -->|Procesar| Sidekiq
+    Sidekiq -->|Escribir Transacción| PG
 ```
+
+### 🔁 Flujo de Solicitud de Intercambio
+
+1. **Client Request**: El usuario pulsa "Intercambiar". Se genera un `Idempotency-Key` único.
+2. **Acceptance (202)**: La API valida el saldo, bloquea la tasa de cambio actual (`locked_rate`) y encola un Job.
+3. **Async Execution**: Sidekiq procesa el intercambio en una transacción atómica con **bloqueo optimista**.
 
 ---
 
-## Registros de Decisiones de Arquitectura (ADR)
+## 💎 Decisiones Técnicas y Razonamiento
 
-### ADR-001: Dinero — NUMERIC(20,8) + BigDecimal, nunca Float
+Hemos construido esta aplicación priorizando la **seguridad financiera** y la **robustez**. Aquí el porqué de nuestras decisiones clave bajo los requisitos del desafío:
 
-Todas las columnas monetarias usan PostgreSQL `NUMERIC(20,8)`. Toda la aritmética usa `BigDecimal`.
+> [!IMPORTANT]
+> ### 1. Precisión Financiera: NUMERIC(20,8) + BigDecimal
+> **Decisión:** Nunca usamos el tipo `Float`. Todas las columnas monetarias son `NUMERIC(20,8)` y los cálculos se hacen con `BigDecimal`.
+> **Por qué:** En finanzas, `0.1 + 0.2` debe ser exactamente `0.3`. Los números de punto flotante (`Float`) causan micro-pérdidas por redondeo binario que, a escala, se traducen en discrepancias graves de dinero real.
 
-**Por qué:** La representación de punto flotante pierde precisión a escala. En volumen, `0.1 + 0.2 != 0.3` causa discrepancias reales de dinero. NUMERIC es exacto; Float no. Esta es la causa #1 de errores financieros en sistemas de producción.
+> [!TIP]
+> ### 2. Experiencia de Usuario: Ejecución Asíncrona (Sidekiq)
+> **Decisión:** El intercambio se acepta de inmediato (`202 Accepted`) y se procesa en segundo plano.
+> **Por qué:** No hacemos esperar al usuario a que la base de datos complete transacciones pesadas. La respuesta es instantánea. Al "bloquear" la tasa al momento de la creación, protegemos al usuario de la volatilidad del precio durante esos milisegundos de espera.
 
-### ADR-002: Ejecución de Intercambio en Dos Fases
+> [!CAUTION]
+> ### 3. Red de Seguridad: Idempotencia y Circuit Breaker
+> **Decisión:** Implementamos `Idempotency-Key` en los POST y un corta-fuegos (`Stoplight`) en la API de precios.
+> **Por qué:** Si el móvil del usuario pierde conexión justo tras darle a "Intercambiar", el reintento no creará un segundo intercambio por error. Si la API de VitaWallet cae, el Circuit Breaker sirve precios en caché en milisegundos, manteniendo la app operativa.
 
-La solicitud HTTP crea el intercambio como `pending` (202 Accepted). El job de Sidekiq lo ejecuta de forma asíncrona.
-
-**Por qué:** Desacopla el tiempo de respuesta HTTP de la ejecución financiera. Los usuarios reciben feedback inmediato. El job es reintentable si falla. La tasa bloqueada (`locked_rate`) en la creación evita desplazamientos de precios entre la solicitud y la ejecución.
-
-### ADR-003: Circuit Breaker en API Externa de Precios
-
-Se usa la gema `stoplight` con almacenamiento de estado en Redis. Después de 3 fallos consecutivos, el circuito se abre y recurre al caché de Redis. Devuelve 503 solo si el caché está vacío.
-
-**Por qué:** Una caída de un proveedor externo no debe tirar nuestra API. El circuit breaker evita fallos en cascada y reintentos masivos. El fallback de Redis ofrece a los usuarios precios "vencidos" pero funcionales durante cortes cortos.
-
-### ADR-004: Bloqueo Optimista en Saldos
-
-`balances.lock_version` evita el doble gasto bajo solicitudes concurrentes. `ExchangeExecutionJob` reintenta ante `ActiveRecord::StaleObjectError` mediante Sidekiq.
-
-**Por qué:** En un entorno multiproceso/multihilo, dos solicitudes concurrentes podrían leer el mismo saldo, ver fondos suficientes y debitar ambas, resultando en un saldo negativo. El bloqueo optimista detecta este conflicto.
-
-### ADR-005: Claves de Idempotencia
-
-`POST /api/v1/exchanges` acepta un encabezado `Idempotency-Key`. Las claves duplicadas devuelven la respuesta original sin crear un nuevo intercambio.
-
-**Por qué:** Los clientes móviles en redes inestables suelen reintentar peticiones. Sin idempotencia, un reintento tras un timeout podría crear intercambios duplicados. Este patrón es estándar en APIs financieras (Stripe, PayPal, etc).
+> [!NOTE]
+> ### 4. Integridad de Datos: Bloqueo Optimista
+> **Decisión:** Uso de `lock_version` en los balances.
+> **Por qué:** Evita el famoso "doble gasto". Si dos procesos intentan debitar de la misma cuenta al mismo tiempo, el bloqueo optimista detecta el conflicto y Sidekiq reintenta la operación de forma segura.
 
 ---
 
-## Configuración
+## 🛠️ Configuración y Despliegue
 
 ### Requisitos Previos
-- Docker + Docker Compose
-- (Desarrollo local) Ruby 3.0.1, Node 20, PostgreSQL 16, Redis 7
+- Docker + Docker Compose instalado.
 
-### Con Docker (recomendado)
+### Instalación Rápida (Recomendado)
 
-```bash
-cp .env.example .env  # o configurar RAILS_MASTER_KEY
-docker compose up
-docker compose exec backend bin/rails db:seed
-```
+1. **Clonar e Iniciar:**
+   ```bash
+   cp .env.example .env
+   docker compose up
+   ```
+2. **Preparar la Base de Datos:**
+   ```bash
+   docker compose exec backend bin/rails db:seed
+   ```
 
-La aplicación estará disponible en:
-- Frontend: http://localhost:5173
-- API Backend: http://localhost:3000
-- Documentación API: http://localhost:3000/api-docs (Swagger UI)
-
-### Credenciales de Demo
-```
-email:    demo@vitawallet.io
-password: password123
-```
+| Servicio | URL |
+| :--- | :--- |
+| **Frontend** | http://localhost:5173 |
+| **API Backend** | http://localhost:3000 |
+| **Swagger Docs** | http://localhost:3000/api-docs |
 
 ---
 
-## Ejecución de Tests
+## 🧪 Estrategia de Pruebas
 
-### Backend (RSpec, TDD)
+Hemos blindado el sistema con **111 tests automatizados** para garantizar que cada moneda se mueva siempre al lugar correcto.
 
-```bash
-cd backend
-bundle exec rspec --format documentation
-```
-
-**92 ejemplos, 0 fallos**
-
-La cobertura de tests incluye:
-- Specs de modelos con pruebas de restricciones de BD
-- Specs de peticiones para todos los endpoints de la API
-- Specs de servicios (soporte de pares arbitrarios con lógica de tasas cruzadas)
-- API externa mockeada con WebMock
-- Redis mockeado con MockRedis
-
-### Frontend (Vitest + MSW)
-
-```bash
-cd frontend
-npm test
-```
-
-**19 tests, 0 fallos**
-
-La cobertura de tests incluye:
-- Hooks personalizados (useBalances, useCreateExchange) con mockeo de API MSW
-- Tests de componentes (LoginPage, DashboardPage, ExchangePage, HistoryPage)
-- Validaciones de flujo completo de intercambio y formateo de monedas
+- **Backend (92 RSpec)**: Probamos desde las restricciones de integridad en la DB hasta la lógica de "cross-rate" para intercambios entre cualquier moneda (BTC/USDT, USD/BTC, etc).
+- **Frontend (19 Vitest)**: Simulamos el flujo completo del usuario, incluyendo validación de saldos en tiempo real y estados de carga.
 
 ---
 
-## Documentación de la API
+## 🌐 Documentación de la API
 
-Consulta `docs/openapi.yml` para la especificación completa OpenAPI 3.0.
-
-Endpoints clave:
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| POST | `/api/v1/auth/login` | No | Iniciar sesión |
-| GET  | `/api/v1/balances`   | Sí | Listar saldos |
-| GET  | `/api/v1/prices`     | Sí | Precios actuales (con caché) |
-| POST | `/api/v1/exchanges`  | Sí | Crear intercambio (202 Accepted) |
-| GET  | `/api/v1/exchanges`  | Sí | Historial (paginado, filtrable) |
-| GET  | `/api/v1/exchanges/:id` | Sí | Detalle de intercambio |
+La especificación completa **OpenAPI 3.0** está disponible en `docs/openapi.yml`. El sistema soporta intercambios dinámicos entre **CLP, USD, BTC, USDC y USDT** de forma automática.
