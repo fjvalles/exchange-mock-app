@@ -142,7 +142,7 @@
 
 /* In the actual app where it's enabled, we'd use teal. But figma shows it gray/disabled */
 .submitBtn[data-active="true"] {
-  background: linear-gradient(90deg, #05BCB9 0%, #007B82 100%);
+  background: linear-gradient(90deg, #05BCB9 0%, #167287 100%);
   color: white;
   box-shadow: 0px 4px 12px rgba(5, 188, 185, 0.25);
   border: none;
@@ -213,7 +213,7 @@
 
 .summaryTotalValue {
   font-weight: 700;
-  color: #007B82;
+  color: #167287;
   font-size: 1.1rem;
 }
 
