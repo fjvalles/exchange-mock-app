@@ -1,11 +1,12 @@
-FROM ruby:3.0.1-alpine
+FROM ruby:3.2-slim
 
-RUN apk add --no-cache \
-    build-base \
-    postgresql-dev \
-    tzdata \
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
     git \
-    curl
+    curl \
+    tzdata \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
