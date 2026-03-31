@@ -41,10 +41,22 @@
 }
 
 .balancesGrid {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
   margin-bottom: 2.5rem;
+}
+
+@media (max-width: 900px) {
+  .balancesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .balancesGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .balanceCard {
@@ -52,8 +64,6 @@
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   padding: 1.5rem;
-  min-width: 250px;
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
