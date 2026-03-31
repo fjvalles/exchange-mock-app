@@ -28,16 +28,9 @@ RSpec.describe Exchange, type: :model do
   end
 
   describe "currency pair validation" do
-    it "accepts valid pairs" do
-      Exchange::VALID_PAIRS.each do |from, to|
-        ex = build(:exchange, from_currency: from, to_currency: to)
-        expect(ex).to be_valid, "Expected #{from}→#{to} to be valid"
-      end
-    end
-
-    it "rejects invalid pairs" do
-      ex = build(:exchange, from_currency: "btc", to_currency: "usdt")
-      expect(ex).not_to be_valid
+    it "accepts any different-currency pair" do
+      ex = build(:exchange, from_currency: "btc", to_currency: "usdc")
+      expect(ex).to be_valid
     end
 
     it "rejects same-currency pairs" do

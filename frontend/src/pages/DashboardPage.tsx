@@ -7,9 +7,6 @@ import { ExchangeSuccessModal } from '../components/ExchangeSuccessModal'
 import coinIcon from '../assets/coin.png'
 import styles from './DashboardPage.module.css'
 
-const CURRENCY_LABELS: Record<string, string> = {
-  usd: 'US Dollar', clp: 'Peso chileno', btc: 'Bitcoin', usdc: 'USD Coin', usdt: 'Tether',
-}
 
 const CURRENCY_ICONS: Record<string, string> = {
   clp: 'https://api.iconify.design/circle-flags:cl.svg',
@@ -79,7 +76,7 @@ export function DashboardPage() {
             {balances?.map((balance) => (
               <div key={balance.currency} className={styles.balanceCard}>
                 <div className={styles.balanceCardHeader}>
-                  <span>{CURRENCY_LABELS[balance.currency] ?? balance.currency.toUpperCase()}</span>
+                  <span>{balance.currency.toUpperCase()}</span>
                   {CURRENCY_ICONS[balance.currency] ? (
                     <img src={CURRENCY_ICONS[balance.currency]} className={styles.currencyIconImage} alt="" />
                   ) : (
@@ -140,7 +137,7 @@ export function DashboardPage() {
               <div className={styles.pagination}>
                 <button
                   className={styles.pageBtn}
-                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setHistoryPage((p: number) => Math.max(1, p - 1))}
                   disabled={historyPage === 1}
                 >
                   ← Anterior

@@ -89,10 +89,17 @@ RSpec.describe CreateExchangeService do
       expect(result.error_code).to eq(:insufficient_balance)
     end
 
-    it "returns failure for invalid currency pair (btc -> usdt)" do
-      result = call_service(from_currency: "btc", to_currency: "usdt")
-      expect(result).to be_failure
-      expect(result.error_code).to eq(:invalid_currency_pair)
+    it "accepts arbitrary pairs (btc -> usdt) using cross-rate logic" do
+      btc_balance.update!(amount: BigDecimal("10"))
+      allow(PriceQuoteService).to receive(:fetch).and_return({
+        prices: [
+          { base: "btc",  quote: "clp", buy_rate: BigDecimal("60000000"), sell_rate: BigDecimal("59000000") },
+          { base: "usdt", quote: "clp", buy_rate: BigDecimal("940"),      sell_rate: BigDecimal("920") }
+        ]
+      })
+      result = call_service(from_currency: "btc", to_currency: "usdt", from_amount: "0.1")
+      expect(result).to be_success
+      expect(Exchange.last.locked_rate).to be > 0
     end
 
     it "returns failure when price is unavailable" do

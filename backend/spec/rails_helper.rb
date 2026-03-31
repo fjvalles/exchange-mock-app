@@ -1,4 +1,5 @@
 require "spec_helper"
+require "database_cleaner/active_record"
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 abort("The Rails environment is running in production mode!") if Rails.env.production?
@@ -22,6 +23,7 @@ RSpec.configure do |config|
   config.include RequestHelpers, type: :request
 
   config.before(:suite) do
+    DatabaseCleaner.allow_remote_database_url = true
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end

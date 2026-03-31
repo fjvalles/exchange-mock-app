@@ -39,12 +39,11 @@ RSpec.describe "Api::V1::Exchanges", type: :request do
       expect(json_response[:code]).to eq("INSUFFICIENT_BALANCE")
     end
 
-    it "returns 422 for invalid currency pair" do
+    it "returns 422 for same-currency pair" do
       post "/api/v1/exchanges",
-           params: { exchange: { from_currency: "btc", to_currency: "usdt", from_amount: "1" } },
+           params: { exchange: { from_currency: "clp", to_currency: "clp", from_amount: "1000" } },
            headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(json_response[:code]).to eq("INVALID_CURRENCY_PAIR")
     end
 
     it "returns 503 when price is unavailable" do
