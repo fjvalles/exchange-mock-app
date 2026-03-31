@@ -65,6 +65,21 @@ Hemos construido esta aplicación priorizando la **seguridad financiera** y la *
 > **Decisión:** Uso de `lock_version` en los balances.
 > **Por qué:** Evita el famoso "doble gasto". Si dos procesos intentan debitar de la misma cuenta al mismo tiempo, el bloqueo optimista detecta el conflicto y Sidekiq reintenta la operación de forma segura.
 
+> [!IMPORTANT]
+> ### 5. Autenticación: Tokens Opacos vs JWT
+> **Decisión:** Uso de `api_token` (almacenado en BD) en lugar de tokens JWT.
+> **Por qué:** En apps financieras, la **revocación inmediata** es ley. Con un `api_token`, si detectamos actividad sospechosa, invalidamos la fila en la BD y el acceso se corta al instante. Con JWT, tendríamos que esperar a que el token expire o implementar una lista negra compleja.
+
+> [!TIP]
+> ### 6. Agilidad en el Frontend: Vite + TypeScript
+> **Decisión:** Migración de Create React App (CRA) a **Vite**.
+> **Por qué:** Vite usa ES Modules nativos, lo que significa que el servidor de desarrollo arranca en milisegundos y el HMR (refresco de cambios) es instantáneo. En una prueba técnica, esta velocidad se traduce en una mayor calidad de código y un feedback loop mucho más corto.
+
+> [!CAUTION]
+> ### 7. Escalabilidad: Arquitectura Multi-Contenedor (Docker)
+> **Decisión:** Separación estricta de la API (Rails), el motor de Jobs (Sidekiq), la BD (Postgres) y el Caché (Redis) en servicios Docker independientes.
+> **Por qué:** Permite el **escalado horizontal independiente**. Si el volumen de intercambios crece, podemos escalar solo los trabajadores de Sidekiq sin consumir recursos extra en el servidor de la API, manteniendo los costes bajos y el rendimiento alto.
+
 ---
 
 ## 🛠️ Configuración y Despliegue
