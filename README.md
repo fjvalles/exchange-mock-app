@@ -1,32 +1,31 @@
-# VitaWallet Exchange — Technical Test
+# VitaWallet Exchange — Prueba Técnica
 
-A full-stack crypto exchange mini-app built with **Ruby on Rails API** + **React (TypeScript)**,
-designed to demonstrate production-grade engineering patterns.
+Una mini-aplicación de intercambio de criptomonedas full-stack construida con **Ruby on Rails API** + **React (TypeScript)**, diseñada para demostrar patrones de ingeniería de nivel de producción.
 
 ---
 
-## Architecture Overview
+## Resumen de la Arquitectura
 
 ```
 exchange-mock-app/
 ├── backend/     Rails 7 API-only (PostgreSQL + Redis + Sidekiq)
 ├── frontend/    React 18 + TypeScript + Vite
-├── docs/        OpenAPI spec
+├── docs/        Especificación OpenAPI
 └── docker-compose.yml
 ```
 
-### Request flow (Exchange)
+### Flujo de Solicitud (Intercambio)
 
 ```
 POST /api/v1/exchanges
-  → Rack::Attack (rate limit)
+  → Rack::Attack (límite de peticiones)
   → authenticate_user!
   → CreateExchangeService
-      → validate currency pair
-      → validate balance
-      → PriceQuoteService  ←→  VitaWallet external API
+      → validar par de divisas (cualquier combinación)
+      → validar saldo del usuario
+      → PriceQuoteService  ←→  API externa de VitaWallet
            ↕ circuit breaker (Stoplight)
-           ↕ Redis cache (60s TTL)
+           ↕ Caché en Redis (60s TTL)
       → Exchange.create!(status: pending, locked_rate)
       → ExchangeExecutionJob.perform_later(id)
   → 202 Accepted
@@ -35,123 +34,70 @@ POST /api/v1/exchanges
   ExchangeExecutionJob
   → ExchangeExecutionService
       → BEGIN TRANSACTION
-      → balances.lock! (optimistic locking)
-      → validate balance (defense in depth)
-      → debit from_currency
-      → credit to_currency (BigDecimal arithmetic)
+      → balances.lock! (bloqueo optimista)
+      → validar saldo (defensa en profundidad)
+      → débito moneda_origen
+      → crédito moneda_destino (aritmética BigDecimal)
       → exchange.update!(status: completed)
       → COMMIT
 ```
 
 ---
 
-## Architecture Decision Records
+## Registros de Decisiones de Arquitectura (ADR)
 
-### ADR-001: Money — NUMERIC(20,8) + BigDecimal, never Float
+### ADR-001: Dinero — NUMERIC(20,8) + BigDecimal, nunca Float
 
-All monetary columns use PostgreSQL `NUMERIC(20,8)`. All arithmetic uses `BigDecimal`.
+Todas las columnas monetarias usan PostgreSQL `NUMERIC(20,8)`. Toda la aritmética usa `BigDecimal`.
 
-**Why:** Floating-point representation loses precision at scale. At volume,
-`0.1 + 0.2 != 0.3` causes real money discrepancies. NUMERIC is exact;
-Float is not. This is the #1 cause of financial bugs in production systems.
+**Por qué:** La representación de punto flotante pierde precisión a escala. En volumen, `0.1 + 0.2 != 0.3` causa discrepancias reales de dinero. NUMERIC es exacto; Float no. Esta es la causa #1 de errores financieros en sistemas de producción.
 
-### ADR-002: Two-Phase Exchange Execution
+### ADR-002: Ejecución de Intercambio en Dos Fases
 
-HTTP request creates the exchange as `pending` (202 Accepted).
-Sidekiq job executes it asynchronously.
+La solicitud HTTP crea el intercambio como `pending` (202 Accepted). El job de Sidekiq lo ejecuta de forma asíncrona.
 
-**Why:** Decouples the HTTP response time from financial execution.
-Users get immediate feedback. The job is retryable if it fails.
-The locked rate at creation prevents price drift between creation and execution.
+**Por qué:** Desacopla el tiempo de respuesta HTTP de la ejecución financiera. Los usuarios reciben feedback inmediato. El job es reintentable si falla. La tasa bloqueada (`locked_rate`) en la creación evita desplazamientos de precios entre la solicitud y la ejecución.
 
-### ADR-003: Circuit Breaker on External Price API
+### ADR-003: Circuit Breaker en API Externa de Precios
 
-Uses `stoplight` gem with Redis state store. After 3 consecutive failures,
-the circuit opens and falls back to Redis cache. Returns 503 only if cache is cold.
+Se usa la gema `stoplight` con almacenamiento de estado en Redis. Después de 3 fallos consecutivos, el circuito se abre y recurre al caché de Redis. Devuelve 503 solo si el caché está vacío.
 
-**Why:** An upstream outage should not make our API unavailable.
-The circuit breaker prevents cascading failures and thundering-herd retries.
-The Redis fallback gives users stale-but-functional prices during short outages.
+**Por qué:** Una caída de un proveedor externo no debe tirar nuestra API. El circuit breaker evita fallos en cascada y reintentos masivos. El fallback de Redis ofrece a los usuarios precios "vencidos" pero funcionales durante cortes cortos.
 
-### ADR-004: Optimistic Locking on Balances
+### ADR-004: Bloqueo Optimista en Saldos
 
-`balances.lock_version` prevents double-spend under concurrent requests.
-`ExchangeExecutionJob` retries on `ActiveRecord::StaleObjectError` via Sidekiq.
+`balances.lock_version` evita el doble gasto bajo solicitudes concurrentes. `ExchangeExecutionJob` reintenta ante `ActiveRecord::StaleObjectError` mediante Sidekiq.
 
-**Why:** In a multi-process/multi-threaded environment, two concurrent requests
-could each read the same balance, both see sufficient funds, and both debit,
-resulting in a negative balance. Optimistic locking detects this conflict.
+**Por qué:** En un entorno multiproceso/multihilo, dos solicitudes concurrentes podrían leer el mismo saldo, ver fondos suficientes y debitar ambas, resultando en un saldo negativo. El bloqueo optimista detecta este conflicto.
 
-### ADR-005: Idempotency Keys
+### ADR-005: Claves de Idempotencia
 
-`POST /api/v1/exchanges` accepts an `Idempotency-Key` header.
-Duplicate keys return the original response without creating a new exchange.
+`POST /api/v1/exchanges` acepta un encabezado `Idempotency-Key`. Las claves duplicadas devuelven la respuesta original sin crear un nuevo intercambio.
 
-**Why:** Mobile clients on unreliable networks retry requests.
-Without idempotency, a retry after a timeout could create duplicate exchanges.
-This pattern is standard in financial APIs (Stripe, PayPal, etc).
-
-### ADR-006: DB-Level Constraints as Last Resort
-
-Check constraints at the DB level enforce:
-- `balance.amount >= 0` (no negative balances)
-- `exchange.status IN ('pending', 'completed', 'rejected')` (no invalid states)
-- `exchange.from_amount > 0` (no zero-value exchanges)
-
-**Why:** Application bugs, direct DB writes, or future devs bypassing validations
-should not corrupt financial data. The DB is the last line of defense.
-
-### ADR-007: Partial Index on Pending Exchanges
-
-```sql
-CREATE INDEX idx_exchanges_pending ON exchanges(user_id, created_at)
-WHERE status = 'pending';
-```
-
-**Why:** Sidekiq jobs query pending exchanges. Most exchanges complete quickly,
-so the pending set is small. A partial index only indexes the rows that matter,
-keeping it small and fast as the table grows to millions of rows.
+**Por qué:** Los clientes móviles en redes inestables suelen reintentar peticiones. Sin idempotencia, un reintento tras un timeout podría crear intercambios duplicados. Este patrón es estándar en APIs financieras (Stripe, PayPal, etc).
 
 ---
 
-## Setup
+## Configuración
 
-### Prerequisites
+### Requisitos Previos
 - Docker + Docker Compose
-- (Local dev) Ruby 3.0.1, Node 20, PostgreSQL 16, Redis 7
+- (Desarrollo local) Ruby 3.0.1, Node 20, PostgreSQL 16, Redis 7
 
-### With Docker (recommended)
+### Con Docker (recomendado)
 
 ```bash
-cp .env.example .env  # or set RAILS_MASTER_KEY
+cp .env.example .env  # o configurar RAILS_MASTER_KEY
 docker compose up
-docker compose exec backend bundle exec rails db:seed
+docker compose exec backend bin/rails db:seed
 ```
 
-App available at:
+La aplicación estará disponible en:
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
-- API docs: http://localhost:3000/api-docs (Swagger UI)
+- API Backend: http://localhost:3000
+- Documentación API: http://localhost:3000/api-docs (Swagger UI)
 
-### Local Development
-
-```bash
-# Backend
-cd backend
-bundle install
-rails db:create db:migrate db:seed
-bundle exec rails server
-
-# Sidekiq (separate terminal)
-bundle exec sidekiq
-
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-### Demo credentials
+### Credenciales de Demo
 ```
 email:    demo@vitawallet.io
 password: password123
@@ -159,7 +105,7 @@ password: password123
 
 ---
 
-## Running Tests
+## Ejecución de Tests
 
 ### Backend (RSpec, TDD)
 
@@ -168,61 +114,42 @@ cd backend
 bundle exec rspec --format documentation
 ```
 
-**92 examples, 0 failures**
+**92 ejemplos, 0 fallos**
 
-Test coverage includes:
-- Model specs with DB constraint tests
-- Request specs for all API endpoints
-- Service specs (CreateExchangeService, ExchangeExecutionService, PriceQuoteService) supporting arbitrary pairs cross-rate logic
-- External API mocked with WebMock
-- Redis mocked with MockRedis
-- Circuit breaker tested with in-memory Stoplight store
+La cobertura de tests incluye:
+- Specs de modelos con pruebas de restricciones de BD
+- Specs de peticiones para todos los endpoints de la API
+- Specs de servicios (soporte de pares arbitrarios con lógica de tasas cruzadas)
+- API externa mockeada con WebMock
+- Redis mockeado con MockRedis
 
 ### Frontend (Vitest + MSW)
 
 ```bash
 cd frontend
 npm test
-npm run type-check
 ```
 
-**19 tests, 0 failures**
+**19 tests, 0 fallos**
 
-Test coverage includes:
-- Custom hooks (useBalances, useCreateExchange) with MSW API mocking
-- LoginPage component tests (form behavior, error states)
-- DashboardPage component tests (balance rendering, history table)
-- ExchangePage component tests (full exchange flow, balance validation)
-- HistoryPage component tests (filtering, table rendering)
+La cobertura de tests incluye:
+- Hooks personalizados (useBalances, useCreateExchange) con mockeo de API MSW
+- Tests de componentes (LoginPage, DashboardPage, ExchangePage, HistoryPage)
+- Validaciones de flujo completo de intercambio y formateo de monedas
 
 ---
 
-## API Documentation
+## Documentación de la API
 
-See `docs/openapi.yml` for the full OpenAPI 3.0 spec.
+Consulta `docs/openapi.yml` para la especificación completa OpenAPI 3.0.
 
-Key endpoints:
+Endpoints clave:
 
-| Method | Path | Auth | Description |
+| Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/api/v1/auth/login` | No | Login |
-| GET  | `/api/v1/balances`   | Yes | List balances |
-| GET  | `/api/v1/prices`     | Yes | Current crypto prices (cached) |
-| POST | `/api/v1/exchanges`  | Yes | Create exchange (202 Accepted) |
-| GET  | `/api/v1/exchanges`  | Yes | Exchange history (paginated, filterable) |
-| GET  | `/api/v1/exchanges/:id` | Yes | Single exchange |
-
----
-
-## Technical Decisions & Trade-offs
-
-| Decision | Chosen | Alternative | Reason |
-|----------|--------|-------------|--------|
-| Auth | Opaque bearer token | JWT | Simpler for this scope; tokens are revocable |
-| Background jobs | Sidekiq | ActiveJob inline | Real async execution; retries on failure |
-| Cache | Redis | DB cache | Sub-millisecond reads; shared across processes |
-| Pagination | Pagy | Kaminari/will_paginate | Fastest Ruby paginator; no monkey-patching |
-| Serializers | Blueprinter | AMS/JSONAPI | Explicit, fast, no magic |
-| State | React Query | Redux | Server state != UI state; RQ handles caching, loading, refetching |
-| Test mocking | WebMock + MockRedis | VCR cassettes | More control, no recorded fixtures to maintain |
-| Frontend HTTP mocking | MSW | Axios mock adapter | Tests the actual HTTP layer, not the adapter |
+| POST | `/api/v1/auth/login` | No | Iniciar sesión |
+| GET  | `/api/v1/balances`   | Sí | Listar saldos |
+| GET  | `/api/v1/prices`     | Sí | Precios actuales (con caché) |
+| POST | `/api/v1/exchanges`  | Sí | Crear intercambio (202 Accepted) |
+| GET  | `/api/v1/exchanges`  | Sí | Historial (paginado, filtrable) |
+| GET  | `/api/v1/exchanges/:id` | Sí | Detalle de intercambio |

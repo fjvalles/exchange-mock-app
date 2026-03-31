@@ -1,28 +1,28 @@
-# VitaWallet — Backend API
+# VitaWallet — API Backend
 
-This is the Ruby on Rails 7 API for the VitaWallet mock exchange.
+Este es el backend de Ruby on Rails 7 para el simulador de intercambio de VitaWallet.
 
-## Tech Stack
+## Stack Tecnológico
 - **Ruby 3.1.2**
 - **Rails 7.1**
-- **PostgreSQL 16** (Primary DB with numeric precision)
-- **Redis 7** (Cache & Sidekiq store)
-- **Sidekiq** (Async exchange execution)
+- **PostgreSQL 16** (Base de datos principal con precisión numérica)
+- **Redis 7** (Cache y almacenamiento de Sidekiq)
+- **Sidekiq** (Ejecución de intercambios asíncronos)
 
-## Key Features
-- **Arbitrary Currency Exchange**: Automatic cross-rate logic via CLP for any pair (CLP, USD, BTC, USDC, USDT).
-- **Idempotent API**: Supports `Idempotency-Key` headers for financial safety.
-- **Circuit Breaker**: Robust integration with external price APIs via `Stoplight`.
-- **Financial Precision**: Using `BigDecimal` everywhere.
+## Características Clave
+- **Intercambio de Monedas Arbitrario**: Lógica automática de tasas cruzadas vía CLP para cualquier par (CLP, USD, BTC, USDC, USDT).
+- **API Idempotente**: Soporte de encabezados `Idempotency-Key` para seguridad financiera.
+- **Circuit Breaker**: Integración robusta con APIs externas de precios mediante `Stoplight`.
+- **Precisión Financiera**: Uso de `BigDecimal` en todos los cálculos monetarios.
 
-## Development & Testing
-Refer to the [Root README](../README.md) for full setup and test instructions using Docker.
+## Desarrollo y Pruebas
+Consulta el [README raíz](../README.md) para instrucciones completas de configuración y ejecución con Docker.
 
-To run only backend tests locally:
+Para correr solo los tests del backend localmente:
 ```bash
 bundle exec rspec
 ```
 
-## API Documentation
-The OpenAPI 3.0 spec is located at `public/openapi.yml`.
-When running locally, visit `http://localhost:3000/api-docs`.
+## Documentación de la API
+La especificación OpenAPI 3.0 se encuentra en `public/openapi.yml`.
+Cuando corras localmente, visita `http://localhost:3000/api-docs`.
