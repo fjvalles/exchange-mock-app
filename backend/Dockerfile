@@ -9,12 +9,14 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     tzdata \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# Pin Bundler to same version as Gemfile.lock to avoid resolution errors
+# Pin Bundler version
 RUN gem install bundler -v 2.4.12 --no-document
 
-COPY Gemfile Gemfile.lock ./
+WORKDIR /app
+
+# Copy only Gemfile — let bundle resolve fresh for linux/amd64
+# (Gemfile.lock was generated on macOS and causes platform conflicts)
+COPY Gemfile ./
 RUN bundle install --jobs 4 --retry 3
 
 COPY . .
