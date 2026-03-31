@@ -33,7 +33,7 @@ class CreateExchangeService
   end
 
   def valid_pair?
-    Exchange::VALID_PAIRS.include?([@from_currency, @to_currency])
+    @from_currency.present? && @to_currency.present? && @from_currency != @to_currency
   end
 
   def sufficient_balance?
