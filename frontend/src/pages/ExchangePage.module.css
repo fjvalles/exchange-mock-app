@@ -1,0 +1,188 @@
+.page {
+  padding: 2.5rem 3rem;
+  flex: 1;
+  max-width: 680px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.balanceHint {
+  color: #007b82;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.inputRow {
+  display: flex;
+  gap: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.select {
+  padding: 0.875rem 1rem;
+  border: none;
+  background: #f9fafb;
+  font-size: 0.95rem;
+  cursor: pointer;
+  outline: none;
+  min-width: 160px;
+  border-right: 1px solid #d1d5db;
+}
+
+.amountInput {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+}
+
+.amountInput:read-only {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+.backBtn {
+  padding: 0.875rem 2rem;
+  background: white;
+  border: 1.5px solid #007b82;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #007b82;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.backBtn:hover {
+  background: rgba(0, 123, 130, 0.05);
+}
+
+.submitBtn {
+  padding: 0.875rem 2rem;
+  background: #007b82;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #006068;
+}
+
+.submitBtn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Summary View Styles */
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.backArrowBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summaryTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.summaryBox {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 500px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.summaryLabel {
+  color: #4b5563;
+}
+
+.summaryValue {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.summaryTotalLabel {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.summaryTotalValue {
+  font-weight: 700;
+  color: #007b82;
+}
+
+.summaryActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 3rem;
+  max-width: 500px;
+  justify-content: center;
+}
+
+.summaryActions button {
+  flex: 1;
+}

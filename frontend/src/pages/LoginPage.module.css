@@ -1,0 +1,137 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  background: #fff;
+}
+
+.formSection {
+  flex: 0 0 480px;
+  padding: 4rem 5rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-size: 0.875rem;
+  color: #444;
+  font-weight: 500;
+}
+
+.field input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.15s;
+  background: #ffffff;
+  color: #213547;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field input:focus {
+  border-color: #007b82;
+  box-shadow: 0 0 0 3px rgba(0,123,130,0.1);
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.inputIcon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  color: #22c55e;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.eyeBtn:hover {
+  color: #333;
+}
+
+.forgotLink {
+  background: none;
+  border: none;
+  color: #007b82;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: right;
+  padding: 0;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.submitBtn {
+  padding: 0.875rem;
+  background: #007b82;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #006068;
+}
+
+.submitBtn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.imageSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.illustrationPlaceholder {
+  font-size: 8rem;
+}
