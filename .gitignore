@@ -1,4 +1,10 @@
-# Rails
+# AI tools
+.claude/
+.gemini/
+
+# Secrets & env
+.env
+.env.*
 backend/config/master.key
 backend/config/credentials/*.key
 backend/log/*.log
@@ -8,8 +14,9 @@ backend/storage/
 backend/public/packs/
 backend/public/assets/
 backend/.bundle/
-backend/vendor/bundle/
+backend/vendor/
 backend/*.gem
+backend/test_exchange.rb
 
 # Frontend
 frontend/node_modules/
