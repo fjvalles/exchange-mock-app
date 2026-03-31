@@ -52,8 +52,13 @@ Rails.application.configure do
   # config.cache_store = :mem_cache_store
 
   # Use a real queuing backend for Active Job (and separate queues per environment).
-  # config.active_job.queue_adapter     = :resque
-  # config.active_job.queue_name_prefix = "backend_production"
+  # Falls back to :async (in-process threads) when Sidekiq is not running,
+  # so exchanges still complete on the free Render tier without a worker process.
+  if ENV["REDIS_URL"].present?
+    config.active_job.queue_adapter = :sidekiq
+  else
+    config.active_job.queue_adapter = :async
+  end
 
   config.action_mailer.perform_caching = false
 
