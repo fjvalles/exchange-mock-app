@@ -125,25 +125,14 @@ export function DashboardPage() {
             <ul className={styles.historyList}>
               {exchangesData?.exchanges.map((exchange) => (
                 <li key={exchange.id} className={styles.historyItem}>
-                  <div className={styles.historyMeta}>
-                    <span className={styles.historyLabel}>
-                      #{exchange.id} · Intercambiaste
-                    </span>
-                    <span className={`${styles.badge} ${styles[exchange.status as 'completed' | 'pending' | 'rejected']}`}>
-                      {exchange.status}
-                    </span>
-                  </div>
-                  <div className={styles.historyAmounts}>
-                    <span className={styles.historyFrom}>
-                      {displayAmount(exchange.from_amount, exchange.from_currency)}
-                    </span>
-                    <span className={styles.historyArrow}>→</span>
-                    <span className={`${styles.historyTo} ${exchange.status === 'completed' ? styles.positive : styles.neutral}`}>
-                      {exchange.to_amount
-                        ? displayAmount(exchange.to_amount, exchange.to_currency)
-                        : '—'}
-                    </span>
-                  </div>
+                  <span className={styles.historyTypeLabel}>
+                    Intercambiaste
+                  </span>
+                  <span className={styles.historyAmountValue}>
+                    {exchange.to_amount
+                      ? displayAmount(exchange.to_amount, exchange.to_currency)
+                      : '—'}
+                  </span>
                 </li>
               ))}
             </ul>
