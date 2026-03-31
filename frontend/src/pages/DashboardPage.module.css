@@ -24,8 +24,13 @@
 }
 
 .username {
-  color: #05BCB9;
+  background: linear-gradient(90deg, #05BCB9 7.82%, #00D1C1 50.81%, #00A3A1 92.83%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-transform: capitalize;
+  display: inline-block;
+  font-weight: 700;
 }
 
 .sectionTitle {
