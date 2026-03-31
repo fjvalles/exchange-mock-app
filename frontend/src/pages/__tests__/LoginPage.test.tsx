@@ -22,7 +22,8 @@ describe('LoginPage', () => {
   it('renders form fields', () => {
     renderLoginPage()
     expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument()
+    // Use placeholder to avoid ambiguity with the show/hide password button aria-label
+    expect(screen.getByPlaceholderText(/escribe tu contraseña/i)).toBeInTheDocument()
   })
 
   it('disables submit button when fields are empty', () => {
@@ -36,7 +37,7 @@ describe('LoginPage', () => {
     renderLoginPage()
 
     await user.type(screen.getByLabelText(/correo electrónico/i), 'demo@vitawallet.io')
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+    await user.type(screen.getByPlaceholderText(/escribe tu contraseña/i), 'password123')
 
     expect(screen.getByRole('button', { name: /iniciar sesión/i })).not.toBeDisabled()
   })
@@ -46,7 +47,7 @@ describe('LoginPage', () => {
     renderLoginPage()
 
     await user.type(screen.getByLabelText(/correo electrónico/i), 'wrong@email.com')
-    await user.type(screen.getByLabelText(/contraseña/i), 'wrongpassword')
+    await user.type(screen.getByPlaceholderText(/escribe tu contraseña/i), 'wrongpassword')
     await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
 
     await waitFor(() => {
