@@ -9,13 +9,12 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     tzdata \
  && rm -rf /var/lib/apt/lists/*
 
-# Pin Bundler version
+# Pin Bundler version to match Gemfile.lock
 RUN gem install bundler -v 2.4.12 --no-document
 
 WORKDIR /app
 
 # Copy only Gemfile — let bundle resolve fresh for linux/amd64
-# (Gemfile.lock was generated on macOS and causes platform conflicts)
 COPY Gemfile ./
 RUN bundle install --jobs 4 --retry 3
 
@@ -25,4 +24,5 @@ RUN chmod +x entrypoint.sh
 
 EXPOSE 3000
 
-CMD ["./entrypoint.sh"]
+# Use shell form (not exec form) so environment variables like $PORT are expanded
+CMD ["/bin/bash", "entrypoint.sh"]
