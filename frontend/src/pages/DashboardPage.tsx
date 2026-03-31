@@ -50,7 +50,7 @@ export function DashboardPage() {
     const isFiat = ['usd', 'clp'].includes(curStr.toLowerCase())
     return `${isFiat ? '$ ' : ''}${valNum.toLocaleString('es-CL', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: isFiat ? 2 : 8,
+      maximumFractionDigits: isFiat ? 2 : 4,
     })} ${curStr.toUpperCase()}`
   }
 
@@ -89,8 +89,8 @@ export function DashboardPage() {
                 <p className={styles.balanceAmount}>
                   {balance.type === 'fiat' ? '$ ' : ''}
                   {parseFloat(balance.amount).toLocaleString('es-CL', {
-                    minimumFractionDigits: balance.type === 'crypto' ? 8 : 2,
-                    maximumFractionDigits: balance.type === 'crypto' ? 8 : 2,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: balance.type === 'crypto' ? 4 : 2,
                   })}
                 </p>
               </div>
