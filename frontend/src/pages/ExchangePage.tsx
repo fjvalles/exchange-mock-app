@@ -8,11 +8,11 @@ import type { Currency } from '../types/api'
 import styles from './ExchangePage.module.css'
 
 const CURRENCIES: { value: Currency; label: string; icon: string }[] = [
-  { value: 'clp',  label: 'CLP', icon: '🇨🇱' },
+  { value: 'clp',  label: 'CLP', icon: 'https://hatscripts.github.io/circle-flags/flags/cl.svg' },
   { value: 'usd',  label: 'USD', icon: '🇺🇸' },
-  { value: 'btc',  label: 'BTC', icon: '₿' },
+  { value: 'btc',  label: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
   { value: 'usdc', label: 'USDC', icon: '🔵' },
-  { value: 'usdt', label: 'USDT', icon: '🟢' },
+  { value: 'usdt', label: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032' },
 ]
 
 function CurrencySelect({
@@ -21,7 +21,11 @@ function CurrencySelect({
   const current = CURRENCIES.find(c => c.value === value);
   return (
     <div className={styles.currencySelectWrapper}>
-      <span className={styles.currencyEmoji}>{current?.icon}</span>
+      {current && (current.icon.startsWith('http') || current.icon.includes('.svg')) ? (
+        <img src={current.icon} className={styles.currencyIcon} alt={current.label} />
+      ) : (
+        <span className={styles.currencyEmoji}>{current?.icon}</span>
+      )}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Currency)}
