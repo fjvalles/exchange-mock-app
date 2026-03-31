@@ -47,8 +47,11 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.2"
-          bundler-cache: true
+          bundler-cache: false
           working-directory: backend
+
+      - name: Install gems
+        run: bundle install --jobs 4 --retry 3
 
       - name: Set up database
         env:
@@ -56,8 +59,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           RAILS_ENV: test
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-        run: |
-          bundle exec rails db:schema:load
+        run: bundle exec rails db:schema:load
 
       - name: Run RSpec
         env:
@@ -97,11 +99,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        run: npm test -- --run
+
       - name: Type check
         run: npm run type-check
-
-      - name: Run tests
-        run: npm test -- --run --coverage
 
       - name: Build
         run: npm run build
