@@ -124,6 +124,48 @@ Hemos blindado el sistema con **111 tests automatizados** para garantizar que ca
 
 ---
 
+## 🚀 Qué quedó pendiente
+
+Aunque el sistema es funcional y robusto, para una versión de producción se podrían implementar las siguientes mejoras:
+
+**Seguridad y autenticación:**
+
+1.  **Invalidación de token en logout:** El endpoint `POST /auth/logout` actualmente retorna éxito sin invalidar el token en base de datos. En producción, se debería regenerar o eliminar el `api_token` del usuario para que un token robado no pueda usarse después de cerrar sesión — especialmente crítico en una app financiera.
+2.  **Almacenamiento seguro del token (httpOnly cookies):** El token de autenticación se persiste en `localStorage`, que es accesible desde JavaScript. Esto lo expone a ataques XSS. La solución es moverlo a una cookie `httpOnly; Secure; SameSite=Strict`, que el navegador no permite leer desde JS bajo ninguna circunstancia.
+3.  **IDs secuenciales en exchanges:** El endpoint `GET /exchanges/:id` filtra correctamente por `current_user`, por lo que un usuario no puede acceder a exchanges ajenos. Sin embargo, los IDs siendo secuenciales permite inferir el volumen total de operaciones del sistema. Se podría mitigar usando UUIDs como identificador público.
+
+**Lógica de negocio:**
+
+4.  **Tasa USD/CLP hardcodeada:** La API de VitaWallet solo devuelve precios para BTC, USDC y USDT contra CLP — no incluye USD. Para calcular cross-rates con USD se usa una tasa fija (`920/940 CLP`). En producción esto debería consumirse de una API en tiempo real (Fixer.io, ExchangeRate-API, Banco Central de Chile) para evitar arbitraje sistemático cuando la tasa real difiere significativamente.
+5.  **Validación de monto mínimo:** No existe un mínimo validado para `from_amount`. Un usuario puede enviar valores extremadamente pequeños (ej: `0.00000001`) y se generará un exchange válido. En producción se debería establecer un monto mínimo por par de monedas.
+6.  **Race condition entre validación y ejecución:** El chequeo de saldo suficiente ocurre dos veces: al crear el exchange (sin lock) y al ejecutarlo (con lock). Si un usuario dispara dos requests simultáneos muy rápido, ambos pueden pasar la primera validación antes de que alguno ejecute. El segundo fallará con `rejected` — no se pierde dinero — pero se generan dos registros `pending` momentáneamente. Se podría eliminar con un lock optimista ya en la fase de creación.
+
+**Escalabilidad y concurrencia:**
+
+7.  **Puma en modo cluster:** Actualmente Puma corre con un solo proceso y 5 threads (`workers` está comentado en `config/puma.rb`), lo que limita la concurrencia real a ~5 requests simultáneos. Para producción se debe activar el modo cluster (`workers WEB_CONCURRENCY`) con `preload_app!` para aprovechar Copy-on-Write y escalar horizontalmente.
+8.  **Pool de conexiones a PostgreSQL:** El pool está fijado en 5 conexiones (igual que `RAILS_MAX_THREADS`). Al escalar Puma a más workers/threads, cada proceso necesita su propio pool — si no se ajusta `pool` y `RAILS_MAX_THREADS` acorde, aparecen errores `ConnectionTimeoutError` bajo carga. Se recomienda configurar ambos explícitamente y considerar PgBouncer como proxy de conexiones.
+9.  **Concurrencia en Sidekiq:** El worker arranca con la configuración por defecto (10 threads). Para carga alta se debería configurar explícitamente la concurrencia en `sidekiq.yml` y ajustar el pool de DB del worker de forma independiente al de la API.
+
+**Producción multi-país:**
+
+10. **HTTPS forzado y HSTS:** No hay configuración que fuerce HTTPS ni cabeceras `Strict-Transport-Security`. En producción todo el tráfico debe ir cifrado y el navegador debe rechazar conexiones HTTP directamente.
+11. **Expiración de tokens:** Los `api_token` no tienen TTL — una vez creados son válidos para siempre. En producción deberían expirar (ej: 24h de inactividad) y requerir re-autenticación, reduciendo la ventana de exposición si un token es comprometido.
+12. **Audit trail de operaciones:** No existe un log de quién hizo qué y desde dónde. En finanzas reguladas es obligatorio registrar cada acción sensible (login, exchange, cambio de datos) con timestamp, IP y user-agent para fines de auditoría y detección de fraude.
+13. **KYC/AML básico:** Con clientes reales de múltiples países, la regulación financiera exige verificar la identidad del usuario (Know Your Customer) y detectar patrones de operaciones sospechosas (Anti-Money Laundering). Actualmente cualquier cuenta puede operar sin ningún tipo de verificación.
+14. **Zonas horarias por usuario:** Todas las fechas se almacenan en UTC correctamente, pero el frontend las muestra sin conversión a la zona horaria local del usuario. Un cliente en Asia ve los `executed_at` en UTC sin contexto.
+15. **Notificaciones al usuario:** No hay ningún mecanismo para avisar al usuario cuando un exchange se completa o es rechazado. El procesamiento es asíncrono, por lo que el usuario debe volver a la app para enterarse del resultado — en producción se esperaría al menos un email o push notification.
+16. **Reconciliación de exchanges stuck:** Si el proceso de Sidekiq muere con jobs en vuelo, los exchanges quedan en `pending` indefinidamente sin ningún mecanismo que los detecte y resuelva. Se necesita un job de reconciliación periódico que marque como `rejected` los exchanges que lleven más de N minutos en `pending`.
+
+**Observabilidad y calidad:**
+
+17. **Actualizaciones en Tiempo Real (WebSockets):** Implementar **ActionCable** para que los precios y los saldos se actualicen instantáneamente en el Dashboard sin necesidad de recargar o hacer polling manual.
+18. **Pruebas de Extremo a Extremo (E2E):** Añadir una suite de **Playwright** o **Cypress** para validar el flujo crítico de "Login -> Intercambio -> Historial" en navegadores reales.
+19. **Gráficos de Historial de Precios:** Integrar una librería de visualización (como Recharts o Lightweight Charts) para mostrar la evolución de la tasa de cambio en las últimas 24 horas.
+20. **Internacionalización (i18n):** Soporte multi-idioma (Español/Inglés) tanto en el backend como en el frontend para usuarios globales.
+21. **Observabilidad Avanzada:** Integrar **Sentry** para el rastreo de errores en tiempo real y **Prometheus/Grafana** para monitorear el rendimiento de Sidekiq y los tiempos de respuesta de la API.
+
+---
+
 ## 🌐 Documentación de la API
 
 La especificación completa **OpenAPI 3.0** está disponible en `docs/openapi.yml`. El sistema soporta intercambios dinámicos entre **CLP, USD, BTC, USDC y USDT** de forma automática.
